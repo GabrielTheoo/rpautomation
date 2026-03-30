@@ -1,0 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #2B331D; --card: #344020; --card-hover: #3d4c25;
+  --border: #4a5c2d; --primary: #A7C871; --primary-dark: #8aab57;
+  --accent: #BBF261; --text: #e8f0d9; --text-muted: #8fa870;
+}
+* { box-sizing: border-box; }
+html, body { background-color: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--card); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+.data-table { @apply w-full text-sm; border-collapse: collapse; }
+.data-table th { @apply bg-card text-text-muted font-semibold text-left px-3 py-2 sticky top-0 z-10; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.data-table td { @apply px-3 py-2; border-bottom: 1px solid var(--border); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.data-table tr:hover td { background-color: var(--card-hover); }
+.badge-impact { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium; }
+.badge-with { background-color: rgba(167,200,113,0.2); color: var(--primary); border: 1px solid rgba(167,200,113,0.4); }
+.badge-without { background-color: rgba(255,100,100,0.1); color: #f87171; border: 1px solid rgba(255,100,100,0.3); }
+.badge-checking { background-color: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+.badge-error { background-color: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+.badge-tier-1 { background-color: rgba(187,242,97,0.2); color: var(--accent); border: 1px solid rgba(187,242,97,0.4); }
+.badge-tier-2 { background-color: rgba(167,200,113,0.2); color: var(--primary); border: 1px solid rgba(167,200,113,0.4); }
+.badge-tier-3 { background-color: rgba(143,168,112,0.2); color: var(--text-muted); border: 1px solid rgba(143,168,112,0.3); }
+@keyframes pulse-green { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+.animate-pulse-green { animation: pulse-green 1.5s ease-in-out infinite; }
+@keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.animate-spin-slow { animation: spin-slow 1s linear infinite; }
