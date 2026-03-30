@@ -1,28 +1,53 @@
 "use client";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BarChart3, Settings, Zap } from "lucide-react";
 
 export default function Navbar() {
   const pathname = usePathname();
+
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-card/95 backdrop-blur-sm">
-      <div className="max-w-screen-xl mx-auto px-6 flex items-center justify-between h-14">
+    <nav className="fixed top-0 left-0 right-0 z-50 border-b bg-navbar"
+      style={{ borderColor: "#3d4c25" }}>
+      <div className="w-full px-4 flex items-center justify-between h-13" style={{ height: "52px" }}>
+        {/* Logo */}
         <Link href="/dashboard" className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 rounded-lg bg-primary/20 border border-primary/40 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
-            <Zap className="w-4 h-4 text-accent" />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+            style={{ background: "rgba(167,200,113,0.15)", border: "1px solid rgba(167,200,113,0.3)" }}>
+            <Zap className="w-4 h-4" style={{ color: "#BBF261" }} />
           </div>
           <div>
-            <span className="font-bold text-text-base text-sm tracking-tight">RP<span className="text-accent">Automation</span></span>
-            <p className="text-text-muted text-[10px] leading-none -mt-0.5">Automação de RP</p>
+            <span className="font-bold text-sm tracking-tight" style={{ color: "#e8f0d9" }}>
+              RP<span style={{ color: "#BBF261" }}>Automation</span>
+            </span>
+            <p className="leading-none mt-0.5" style={{ color: "#8fa870", fontSize: "10px" }}>
+              Automação de RP
+            </p>
           </div>
         </Link>
+
+        {/* Nav Links */}
         <div className="flex items-center gap-1">
-          <Link href="/dashboard" className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${pathname==="/dashboard"?"bg-primary/20 text-primary border border-primary/30":"text-text-muted hover:text-text-base hover:bg-card-hover"}`}>
-            <BarChart3 className="w-3.5 h-3.5" />Dashboard
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+            style={pathname === "/dashboard"
+              ? { background: "rgba(167,200,113,0.2)", color: "#A7C871", border: "1px solid rgba(167,200,113,0.3)" }
+              : { color: "#8fa870" }}
+          >
+            <BarChart3 className="w-3.5 h-3.5" />
+            Dashboard
           </Link>
-          <Link href="/tier-config" className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${pathname==="/tier-config"?"bg-primary/20 text-primary border border-primary/30":"text-text-muted hover:text-text-base hover:bg-card-hover"}`}>
-            <Settings className="w-3.5 h-3.5" />Config. Tier
+          <Link
+            href="/tier-config"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+            style={pathname === "/tier-config"
+              ? { background: "rgba(167,200,113,0.2)", color: "#A7C871", border: "1px solid rgba(167,200,113,0.3)" }
+              : { color: "#8fa870" }}
+          >
+            <Settings className="w-3.5 h-3.5" />
+            Config. Tier
           </Link>
         </div>
       </div>

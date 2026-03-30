@@ -11,7 +11,12 @@ export interface CleanedRow {
 
 export interface ProcessedRow extends CleanedRow {
   "Proactive or Spontaneous": "Proactive" | "Spontaneous" | "";
-  "With Impact or Without Impact": "With Impact" | "Without Impact" | "Checking..." | "Error" | "";
+  "With Impact or Without Impact":
+    | "With Impact"
+    | "Without Impact"
+    | "Checking..."
+    | "Error"
+    | "";
   Tier: "1" | "2" | "3" | "N/A" | "";
 }
 

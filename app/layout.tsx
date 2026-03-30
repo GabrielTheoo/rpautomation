@@ -6,7 +6,11 @@ export const metadata: Metadata = {
   description: "Sistema de automação e análise de clipping de RP",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="pt-BR">
       <body>{children}</body>
