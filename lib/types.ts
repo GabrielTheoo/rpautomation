@@ -27,7 +27,7 @@ export interface TierEntry {
   tier: 1 | 2 | 3;
 }
 
-export type WizardStep = 1 | 2 | 3 | 4;
+export type WizardStep = 1 | 2 | 3 | 4 | 5;
 
 export interface ImpactResult {
   url: string;
