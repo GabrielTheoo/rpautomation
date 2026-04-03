@@ -10,10 +10,11 @@ interface Step {
 }
 
 const STEPS: Step[] = [
-  { number: 1, label: "Upload", description: "Inserir planilha" },
+  { number: 1, label: "Upload",           description: "Inserir planilha" },
   { number: 2, label: "Pré-visualização", description: "Conferir dados limpos" },
-  { number: 3, label: "Processamento", description: "Tier, Impacto e campos" },
-  { number: 4, label: "Exportar", description: "Gerar planilha final" },
+  { number: 3, label: "Processamento",    description: "Tier, Impacto e campos" },
+  { number: 4, label: "Review",           description: "Gráficos e resumo" },
+  { number: 5, label: "Exportar",         description: "Gerar planilha final" },
 ];
 
 interface Props {
@@ -34,7 +35,7 @@ export default function StepIndicator({ currentStep, onStepClick }: Props) {
             <button
               onClick={() => isClickable && onStepClick(step.number)}
               disabled={!isClickable}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all ${
                 isCurrent
                   ? "bg-primary/15 border border-primary/30"
                   : isDone
@@ -43,7 +44,7 @@ export default function StepIndicator({ currentStep, onStepClick }: Props) {
               }`}
             >
               <div
-                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all ${
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all ${
                   isDone
                     ? "bg-primary text-bg"
                     : isCurrent
@@ -51,31 +52,21 @@ export default function StepIndicator({ currentStep, onStepClick }: Props) {
                     : "bg-border text-text-muted"
                 }`}
               >
-                {isDone ? <Check className="w-3.5 h-3.5" /> : step.number}
+                {isDone ? <Check className="w-3 h-3" /> : step.number}
               </div>
-              <div className="text-left hidden sm:block">
-                <p
-                  className={`text-xs font-semibold leading-none ${
-                    isCurrent
-                      ? "text-accent"
-                      : isDone
-                      ? "text-primary"
-                      : "text-text-muted"
-                  }`}
-                >
+              <div className="text-left hidden md:block">
+                <p className={`text-xs font-semibold leading-none ${
+                  isCurrent ? "text-accent" : isDone ? "text-primary" : "text-text-muted"
+                }`}>
                   {step.label}
                 </p>
-                <p className="text-[10px] text-text-muted mt-0.5">
-                  {step.description}
-                </p>
+                <p className="text-[10px] text-text-muted mt-0.5">{step.description}</p>
               </div>
             </button>
             {idx < STEPS.length - 1 && (
-              <div
-                className={`h-px w-6 mx-1 transition-all ${
-                  step.number < currentStep ? "bg-primary" : "bg-border"
-                }`}
-              />
+              <div className={`h-px w-4 mx-0.5 transition-all ${
+                step.number < currentStep ? "bg-primary" : "bg-border"
+              }`} />
             )}
           </div>
         );
