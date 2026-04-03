@@ -7,6 +7,7 @@ import {
   Upload, FileSpreadsheet, CheckCircle2, Loader2,
   Download, AlertTriangle, RefreshCw, Zap, TrendingUp,
   Globe, FileText, Search, BarChart3,
+  Plus, Trash2, X, Info,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import StepIndicator from "@/components/StepIndicator";
@@ -78,10 +79,10 @@ function StatCard({ icon: Icon, label, value, sub, color = "primary", tooltip, v
           <Icon className={`w-4 h-4 ${colorCls}`} />
         </div>
         <div className="min-w-0">
-          <p className="text-text-muted text-xs">{label}</p>
+          <p className="text-text-muted text-sm">{label}</p>
           <p className={`text-xl font-bold mt-0.5 ${colorCls} truncate`}
             title={valueTitle || undefined}>{value}</p>
-          {sub && <p className="text-text-muted text-[11px] mt-0.5">{sub}</p>}
+          {sub && <p className="text-text-muted text-xs mt-0.5">{sub}</p>}
         </div>
       </div>
       <div className="tooltip-box">{tooltip}{valueTitle && <><br /><span className="opacity-80 text-[11px]">{valueTitle}</span></>}</div>
@@ -163,7 +164,7 @@ function ReviewSection({ rows }: { rows: ProcessedRow[] }) {
     <div className="space-y-5">
       {/* KPIs Gerais */}
       <div>
-        <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">KPIs Gerais</p>
+        <p className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-2">KPIs Gerais</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <StatCard icon={FileText} label="Total de Notícias" value={n} color="primary"
             tooltip="Total de matérias no período selecionado." />
@@ -181,7 +182,7 @@ function ReviewSection({ rows }: { rows: ProcessedRow[] }) {
 
       {/* KPIs Tier 1 */}
       <div>
-        <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">KPIs Tier 1</p>
+        <p className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-2">KPIs Tier 1</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <StatCard icon={Zap} label="AVE Tier 1" color="accent"
             value={aveTier1Fmt.display}
@@ -199,7 +200,7 @@ function ReviewSection({ rows }: { rows: ProcessedRow[] }) {
 
       {/* KPIs Sentimento & Impacto */}
       <div>
-        <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Sentimento & Impacto</p>
+        <p className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-2">Sentimento & Impacto</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <StatCard icon={FileText} label="Matérias Positivas" value={positive} color="accent"
             tooltip="Total de matérias com sentimento Positivo." />
@@ -242,6 +243,207 @@ function ReviewSection({ rows }: { rows: ProcessedRow[] }) {
   );
 }
 
+// ─── Tier Config Modal ────────────────────────────────
+function TierConfigModal({ tierEntries, setTierEntries, onClose }: {
+  tierEntries: TierEntry[];
+  setTierEntries: React.Dispatch<React.SetStateAction<TierEntry[]>>;
+  onClose: () => void;
+}) {
+  const [newEntry, setNewEntry] = useState({ keyword: "", name: "", tier: 1 as 1 | 2 | 3 });
+  const [addError, setAddError] = useState("");
+  const [saved, setSaved] = useState(false);
+  const [search, setSearch] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{ added: number; skipped: number } | null>(null);
+  const [importError, setImportError] = useState("");
+
+  const save = (entries: TierEntry[]) => {
+    localStorage.setItem("rpautomation_tiers", JSON.stringify(entries));
+    setTierEntries(entries);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1500);
+  };
+
+  const handleAdd = () => {
+    setAddError("");
+    if (!newEntry.keyword.trim() || !newEntry.name.trim()) { setAddError("Preencha o nome e a keyword."); return; }
+    if (tierEntries.some(e => e.keyword.toLowerCase() === newEntry.keyword.trim().toLowerCase())) { setAddError("Keyword já existe."); return; }
+    const entry: TierEntry = { id: Math.random().toString(36).slice(2), keyword: newEntry.keyword.trim().toLowerCase(), name: newEntry.name.trim(), tier: newEntry.tier };
+    save([...tierEntries, entry]);
+    setNewEntry({ keyword: "", name: "", tier: 1 });
+  };
+
+  const handleDelete = (id: string) => save(tierEntries.filter(e => e.id !== id));
+  const handleTierChange = (id: string, tier: 1 | 2 | 3) => save(tierEntries.map(e => e.id === id ? { ...e, tier } : e));
+
+  const onImportDrop = useCallback(async (files: File[]) => {
+    const file = files[0]; if (!file) return;
+    setIsImporting(true); setImportError(""); setImportResult(null);
+    try {
+      const fd = new FormData(); fd.append("file", file);
+      const res = await fetch("/api/tier-import", { method: "POST", body: fd });
+      if (!res.ok) throw new Error("Falha ao processar planilha");
+      const data = await res.json();
+      const imported: Array<{ name: string; keyword: string; tier: 1 | 2 | 3 }> = data.entries || [];
+      let added = 0, skipped = 0;
+      const updated = [...tierEntries];
+      for (const item of imported) {
+        if (updated.some(e => e.keyword.toLowerCase() === item.keyword.toLowerCase())) { skipped++; }
+        else { updated.push({ id: Math.random().toString(36).slice(2), ...item }); added++; }
+      }
+      save(updated); setImportResult({ added, skipped });
+    } catch (err) { setImportError(err instanceof Error ? err.message : "Erro desconhecido"); }
+    finally { setIsImporting(false); }
+  }, [tierEntries]);
+
+  const { getRootProps: getTierImportProps, getInputProps: getTierImportInput, isDragActive: isTierDragActive } = useDropzone({
+    onDrop: onImportDrop,
+    accept: { "text/csv": [".csv"], "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"], "application/vnd.ms-excel": [".xls"] },
+    multiple: false, disabled: isImporting,
+  });
+
+  const filtered = search
+    ? tierEntries.filter(e => e.name.toLowerCase().includes(search.toLowerCase()) || e.keyword.includes(search.toLowerCase()))
+    : tierEntries;
+
+  const TIER_CLS: Record<string, string> = {
+    "1": "bg-accent/10 border-accent/30 text-accent",
+    "2": "bg-primary/10 border-primary/30 text-primary",
+    "3": "bg-text-muted/10 border-text-muted/20 text-text-muted",
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="bg-bg rounded-2xl w-full max-w-3xl max-h-[88vh] flex flex-col shadow-2xl border border-border">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
+          <div>
+            <h2 className="text-base font-bold text-text-base">Configuração de Tiers</h2>
+            <p className="text-text-muted text-sm mt-0.5">Defina as keywords para classificação automática por URL</p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-card text-text-muted hover:text-text-base transition-all">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          {/* Import */}
+          <div className="bg-card border border-border rounded-xl p-4">
+            <p className="text-sm font-semibold text-text-base mb-1 flex items-center gap-2">
+              <FileSpreadsheet className="w-4 h-4 text-accent" /> Importar via Planilha
+            </p>
+            <p className="text-text-muted text-xs mb-3">Planilha com colunas <strong>Nome</strong>, <strong>Keyword</strong> e <strong>Tier</strong> (1, 2 ou 3).</p>
+            <div {...getTierImportProps()} className={`border-2 border-dashed rounded-xl px-4 py-3 text-center cursor-pointer transition-all ${isTierDragActive ? "border-accent bg-green-50" : "border-border hover:border-primary/60"}`}>
+              <input {...getTierImportInput()} />
+              {isImporting
+                ? <span className="text-text-muted text-sm flex items-center justify-center gap-2"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Processando…</span>
+                : <span className="text-text-muted text-sm">Arraste ou <span className="text-primary underline cursor-pointer">clique</span> — CSV ou XLSX</span>}
+            </div>
+            {importResult && (
+              <p className="mt-2 text-sm text-primary flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <strong>{importResult.added}</strong> importado{importResult.added !== 1 ? "s" : ""}
+                {importResult.skipped > 0 && <span className="text-text-muted ml-1">• {importResult.skipped} ignorado{importResult.skipped !== 1 ? "s" : ""}</span>}
+              </p>
+            )}
+            {importError && <p className="mt-2 text-sm text-red-500">{importError}</p>}
+          </div>
+
+          {/* Add form */}
+          <div className="bg-card border border-border rounded-xl p-4">
+            <p className="text-sm font-semibold text-text-base mb-3 flex items-center gap-2">
+              <Plus className="w-4 h-4 text-accent" /> Adicionar Veículo / Keyword
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-2">
+              <input placeholder="Nome do veículo" value={newEntry.name}
+                onChange={e => setNewEntry(n => ({ ...n, name: e.target.value }))}
+                onKeyDown={e => e.key === "Enter" && handleAdd()}
+                className="bg-bg border border-border rounded-xl px-3 py-2 text-sm text-text-base focus:outline-none focus:border-primary placeholder-text-muted/50" />
+              <input placeholder="Keyword no URL (ex: estadao)" value={newEntry.keyword}
+                onChange={e => setNewEntry(n => ({ ...n, keyword: e.target.value }))}
+                onKeyDown={e => e.key === "Enter" && handleAdd()}
+                className="bg-bg border border-border rounded-xl px-3 py-2 text-sm text-text-base font-mono focus:outline-none focus:border-primary placeholder-text-muted/50" />
+              <select value={newEntry.tier} onChange={e => setNewEntry(n => ({ ...n, tier: Number(e.target.value) as 1 | 2 | 3 }))}
+                className="bg-bg border border-border rounded-xl px-3 py-2 text-sm text-text-base focus:outline-none focus:border-primary">
+                <option value={1}>Tier 1 — Alto alcance</option>
+                <option value={2}>Tier 2 — Médio alcance</option>
+                <option value={3}>Tier 3 — Menor alcance</option>
+              </select>
+            </div>
+            {addError && <p className="text-red-400 text-xs mb-2">{addError}</p>}
+            <button onClick={handleAdd}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-bg font-semibold text-sm hover:opacity-90 transition-all">
+              <Plus className="w-3.5 h-3.5" /> Adicionar
+              {saved && <span className="text-green-200 text-xs ml-1">✓ Salvo</span>}
+            </button>
+          </div>
+
+          {/* List */}
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border">
+              <Search className="w-3.5 h-3.5 text-text-muted flex-shrink-0" />
+              <input placeholder="Buscar por nome ou keyword…" value={search} onChange={e => setSearch(e.target.value)}
+                className="flex-1 bg-transparent text-sm text-text-base focus:outline-none placeholder-text-muted/50" />
+              <span className="text-text-muted text-xs">{filtered.length}/{tierEntries.length}</span>
+            </div>
+            {tierEntries.length === 0 ? (
+              <p className="text-text-muted text-sm text-center py-10">Nenhum veículo cadastrado. Adicione acima.</p>
+            ) : (
+              <div className="overflow-y-auto" style={{ maxHeight: "220px" }}>
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left px-4 py-2 text-text-muted text-xs font-semibold uppercase">Nome</th>
+                      <th className="text-left px-4 py-2 text-text-muted text-xs font-semibold uppercase">Keyword</th>
+                      <th className="text-left px-4 py-2 text-text-muted text-xs font-semibold uppercase">Tier</th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map(entry => (
+                      <tr key={entry.id} className="border-b border-border hover:bg-card-hover transition-colors">
+                        <td className="px-4 py-2.5 text-sm text-text-base">{entry.name}</td>
+                        <td className="px-4 py-2.5">
+                          <code className="text-accent text-xs bg-accent/10 px-1.5 py-0.5 rounded">{entry.keyword}</code>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <select value={entry.tier} onChange={e => handleTierChange(entry.id, Number(e.target.value) as 1 | 2 | 3)}
+                            className={`text-xs font-semibold px-2 py-1 rounded-lg border cursor-pointer focus:outline-none transition-colors ${TIER_CLS[String(entry.tier)] || ""}`}>
+                            <option value={1}>Tier 1</option>
+                            <option value={2}>Tier 2</option>
+                            <option value={3}>Tier 3</option>
+                          </select>
+                        </td>
+                        <td className="px-4 py-2.5 text-right">
+                          <button onClick={() => handleDelete(entry.id)}
+                            className="p-1.5 rounded-lg text-text-muted hover:text-red-400 hover:bg-red-500/10 transition-all" title="Remover">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Help note */}
+          <div className="p-3 rounded-xl bg-card border border-border flex items-start gap-3">
+            <Info className="w-4 h-4 text-text-muted flex-shrink-0 mt-0.5" />
+            <p className="text-text-muted text-xs">
+              A <strong className="text-text-base">keyword</strong> é qualquer trecho único na URL do veículo.
+              Ex: para <code className="text-primary">panoramafarmaceutico.com.br</code>, use <code className="text-accent">panoramafarmaceutico</code>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Button styles ────────────────────────────────────
 const btnPrimary   = "flex items-center gap-2 px-5 py-2 rounded-xl font-semibold text-sm text-white transition-all hover:opacity-90";
 const btnSecondary = "flex items-center gap-2 px-3 py-2 rounded-xl border border-border text-text-muted hover:text-text-base hover:border-primary/50 text-sm transition-all bg-card";
@@ -261,6 +463,7 @@ export default function Dashboard() {
   const [uploadError, setUploadError] = useState("");
   const [tierEntries, setTierEntries] = useState<TierEntry[]>([]);
   const [activeCountry, setActiveCountry] = useState<string>("all");
+  const [showTierModal, setShowTierModal] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("rpautomation_tiers");
@@ -397,10 +600,10 @@ export default function Dashboard() {
 
         {/* Sub-header */}
         <div className="border-b border-border bg-card shadow-sm">
-          <div className="w-full px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="w-full px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-base font-bold text-text-base">Automação de RP</h1>
-              <p className="text-text-muted text-xs mt-0.5">
+              <h1 className="text-lg font-bold text-text-base">Automação de RP</h1>
+              <p className="text-text-muted text-sm mt-0.5">
                 Importe, processe e exporte seus relatórios de clipping
               </p>
             </div>
@@ -554,10 +757,10 @@ export default function Dashboard() {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-base font-bold text-text-base flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-text-base flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-primary" /> Pré-visualização — Dados Limpos
                   </h2>
-                  <p className="text-text-muted text-xs mt-0.5">
+                  <p className="text-text-muted text-sm mt-0.5">
                     <span className="font-medium text-primary">{fileName}</span> •{" "}
                     {rows.length} registros • {(fileSize / 1024).toFixed(1)} KB
                   </p>
@@ -596,12 +799,15 @@ export default function Dashboard() {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-base font-bold text-text-base">Processamento Inteligente</h2>
-                  <p className="text-text-muted text-xs mt-0.5">
+                  <h2 className="text-lg font-bold text-text-base">Processamento Inteligente</h2>
+                  <p className="text-text-muted text-sm mt-0.5">
                     Tier auto-preenchido por URL • Impacto verificado via leitura da notícia • Proativo/Espontâneo manual
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
+                  <button onClick={() => setShowTierModal(true)} className={btnSecondary}>
+                    <FileSpreadsheet className="w-3.5 h-3.5" /> Configurar Tiers
+                  </button>
                   {!isCheckingImpact && (
                     <button onClick={checkAllImpact} className={btnSecondary}>
                       <RefreshCw className="w-3.5 h-3.5" /> Verificar Impacto
@@ -625,7 +831,7 @@ export default function Dashboard() {
                   <AlertTriangle className="w-4 h-4 flex-shrink-0" style={{ color: "#9A6B00" }} />
                   <p className="text-sm" style={{ color: "#9A6B00" }}>
                     Nenhum Tier configurado.{" "}
-                    <a href="/tier-config" className="underline font-medium">Configure os tiers</a>{" "}
+                    <button onClick={() => setShowTierModal(true)} className="underline font-medium cursor-pointer">Configure os tiers</button>{" "}
                     para preenchimento automático por URL.
                   </p>
                 </div>
@@ -645,10 +851,10 @@ export default function Dashboard() {
             <div>
               <div className="flex items-center justify-between mb-5">
                 <div>
-                  <h2 className="text-base font-bold text-text-base flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-text-base flex items-center gap-2">
                     <BarChart3 className="w-4 h-4 text-primary" /> Review — Resumo & Gráficos
                   </h2>
-                  <p className="text-text-muted text-xs mt-0.5">
+                  <p className="text-text-muted text-sm mt-0.5">
                     Visão consolidada dos dados processados. Filtre por país usando as abas.
                   </p>
                 </div>
@@ -669,60 +875,42 @@ export default function Dashboard() {
 
           {/* ══ STEP 5 — EXPORT ═══════════════════════ */}
           {mode === "clipping" && step === 5 && (
-            <div className="max-w-lg mx-auto">
-              <div className="text-center mb-6">
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3"
-                  style={{ background: "#E3F4D0", border: "1px solid #A8D880" }}>
-                  <CheckCircle2 className="w-5 h-5 text-primary" />
+            <div className="flex items-center justify-center" style={{ minHeight: "60vh" }}>
+              <div className="text-center max-w-sm w-full">
+                <div className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6"
+                  style={{ background: "#E3F4D0", border: "2px solid #A8D880" }}>
+                  <CheckCircle2 className="w-10 h-10 text-primary" />
                 </div>
-                <h2 className="text-lg font-bold text-text-base">Pronto para Exportar!</h2>
-                <p className="text-text-muted text-sm mt-1">Planilha processada e compatível com Google Drive</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                <StatCard icon={FileText} label="Total de Registros" value={rows.length} color="primary"
-                  tooltip="Total de notícias processadas na planilha." />
-                <StatCard icon={TrendingUp} label="Com Impacto" value={withImpact} color="accent"
-                  sub={`${rows.length > 0 ? Math.round((withImpact/rows.length)*100) : 0}% do total`}
-                  tooltip="Notícias onde Eurofarma é citada 2+ vezes ou está no título." />
-                <StatCard icon={Globe} label="Sem Impacto" value={withoutImpact} color="muted"
-                  tooltip="Notícias onde Eurofarma tem menos de 2 menções e não está no título." />
-                <StatCard icon={Zap} label="AVE Total" color="accent"
-                  value={fmtAVE(rows.reduce((s, r) => s + (parseFloat(String(r.AVE ?? "").replace(/[$,\s]/g, "")) || 0), 0)).display}
-                  tooltip="Valor total em dólares do espaço editorial equivalente a publicidade paga." />
-              </div>
-
-              <div className="mb-5 p-4 rounded-xl bg-card border border-border">
-                <p className="text-text-muted text-xs font-semibold uppercase tracking-wider mb-2">Colunas exportadas</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {["Date","Headline","URL","Source","Country","Reach","AVE","Sentiment",
-                    "Proactive or Spontaneous","With Impact or Without Impact","Tier"].map((col, i) => (
-                    <span key={col} className="px-2 py-0.5 rounded-lg text-xs font-medium"
-                      style={i >= 8
-                        ? { background: "#E3F4D0", color: "#3A7015", border: "1px solid #A8D880" }
-                        : { background: "#F0F5EE", color: "#4A7B1E", border: "1px solid #DDE8D8" }}>
-                      {col}
-                    </span>
-                  ))}
+                <h2 className="text-3xl font-bold text-text-base mb-2">Pronto para Exportar!</h2>
+                <p className="text-text-muted text-base mb-8">
+                  Planilha processada com <span className="font-semibold text-primary">{rows.length} registros</span> — compatível com Google Drive
+                </p>
+                <div className="flex flex-col gap-3">
+                  <button onClick={handleExport}
+                    className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-bold text-base text-white transition-all hover:opacity-90 shadow-md"
+                    style={{ background: "#4A7B1E" }}>
+                    <Download className="w-5 h-5" /> Baixar Planilha (.xlsx)
+                  </button>
+                  <button onClick={resetWizard}
+                    className="w-full flex items-center justify-center gap-3 px-6 py-3 rounded-xl border border-border text-text-muted hover:text-text-base text-sm transition-all bg-card hover:border-primary/50">
+                    <RefreshCw className="w-4 h-4" /> Processar Nova Planilha
+                  </button>
                 </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <button onClick={handleExport}
-                  className="w-full flex items-center justify-center gap-3 px-6 py-3.5 rounded-xl font-bold text-sm text-white transition-all hover:opacity-90"
-                  style={{ background: "#4A7B1E" }}>
-                  <Download className="w-4 h-4" /> Baixar Planilha (.xlsx)
-                </button>
-                <button onClick={resetWizard}
-                  className="w-full flex items-center justify-center gap-3 px-6 py-2.5 rounded-xl border border-border text-text-muted hover:text-text-base text-sm transition-all bg-card hover:border-primary/50">
-                  <RefreshCw className="w-3.5 h-3.5" /> Processar Nova Planilha
-                </button>
               </div>
             </div>
           )}
 
         </div>
       </main>
+
+      {/* Tier Config Modal */}
+      {showTierModal && (
+        <TierConfigModal
+          tierEntries={tierEntries}
+          setTierEntries={setTierEntries}
+          onClose={() => setShowTierModal(false)}
+        />
+      )}
     </div>
   );
 }

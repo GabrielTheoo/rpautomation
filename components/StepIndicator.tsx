@@ -35,7 +35,7 @@ export default function StepIndicator({ currentStep, onStepClick }: Props) {
             <button
               onClick={() => isClickable && onStepClick(step.number)}
               disabled={!isClickable}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all ${
+              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl transition-all ${
                 isCurrent
                   ? "bg-primary/15 border border-primary/30"
                   : isDone
@@ -44,7 +44,7 @@ export default function StepIndicator({ currentStep, onStepClick }: Props) {
               }`}
             >
               <div
-                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all ${
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 transition-all ${
                   isDone
                     ? "bg-primary text-bg"
                     : isCurrent
@@ -52,19 +52,19 @@ export default function StepIndicator({ currentStep, onStepClick }: Props) {
                     : "bg-border text-text-muted"
                 }`}
               >
-                {isDone ? <Check className="w-3 h-3" /> : step.number}
+                {isDone ? <Check className="w-4 h-4" /> : step.number}
               </div>
-              <div className="text-left hidden md:block">
-                <p className={`text-xs font-semibold leading-none ${
+              <div className="text-left">
+                <p className={`text-sm font-semibold leading-none ${
                   isCurrent ? "text-accent" : isDone ? "text-primary" : "text-text-muted"
                 }`}>
                   {step.label}
                 </p>
-                <p className="text-[10px] text-text-muted mt-0.5">{step.description}</p>
+                <p className="text-xs text-text-muted mt-0.5">{step.description}</p>
               </div>
             </button>
             {idx < STEPS.length - 1 && (
-              <div className={`h-px w-4 mx-0.5 transition-all ${
+              <div className={`h-px w-5 mx-0.5 transition-all ${
                 step.number < currentStep ? "bg-primary" : "bg-border"
               }`} />
             )}

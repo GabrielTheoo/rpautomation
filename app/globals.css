@@ -36,7 +36,7 @@ html, body {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
-  font-size: 0.75rem;
+  font-size: 0.825rem;
 }
 
 .data-table colgroup col:nth-child(1)  { width: 32px; }   /* # */
@@ -57,7 +57,7 @@ html, body {
   color: var(--text-muted);
   font-weight: 600;
   text-align: left;
-  padding: 8px 6px;
+  padding: 10px 7px;
   position: sticky;
   top: 0;
   z-index: 10;
@@ -65,13 +65,13 @@ html, body {
   overflow: hidden;
   text-overflow: ellipsis;
   border-bottom: 1px solid var(--border);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   letter-spacing: 0.02em;
   text-transform: uppercase;
 }
 
 .data-table td {
-  padding: 7px 6px;
+  padding: 9px 7px;
   border-bottom: 1px solid #EEF3EC;
   overflow: hidden;
   text-overflow: ellipsis;

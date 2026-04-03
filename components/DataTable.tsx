@@ -49,11 +49,11 @@ function SentimentBadge({ sentiment }: { sentiment: string }) {
 }
 
 const SELECT_CLS =
-  "w-full bg-white border border-border text-text-base text-xs rounded-md px-1.5 py-1 " +
+  "w-full bg-white border border-border text-text-base text-sm rounded-md px-1.5 py-1 " +
   "focus:outline-none focus:border-primary transition-colors appearance-none cursor-pointer";
 
 const EMPTY_CLS =
-  "w-full bg-gray-50 border border-gray-200 text-gray-300 text-xs rounded-md px-1.5 py-1 cursor-not-allowed";
+  "w-full bg-gray-50 border border-gray-200 text-gray-300 text-sm rounded-md px-1.5 py-1 cursor-not-allowed";
 
 export default function DataTable({
   rows,
