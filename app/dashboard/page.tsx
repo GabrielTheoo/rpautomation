@@ -62,7 +62,7 @@ function CountryTabs({ countries, active, onSelect, rows }: {
   );
 }
 
-// ─── StatCard ─────────────────────────────────────────
+// ─── StatCard ──────────────────────────────────────────
 interface StatCardProps {
   icon: React.ElementType; label: string; value: string | number;
   sub?: string; color?: "primary" | "accent" | "muted";
@@ -90,7 +90,7 @@ function StatCard({ icon: Icon, label, value, sub, color = "primary", tooltip, v
   );
 }
 
-// ─── Progress Bar ─────────────────────────────────────
+// ─── Progress Bar ─────────────────────────────────────────
 function ProgressBar({ value, max, label }: { value: number; max: number; label?: string }) {
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
   return (
@@ -107,7 +107,7 @@ function ProgressBar({ value, max, label }: { value: number; max: number; label?
   );
 }
 
-// ─── Review Charts ────────────────────────────────────
+// ─── Review Charts ─────────────────────────────────────────
 function HBar({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
   const pct = max > 0 ? (value / max) * 100 : 0;
   return (
@@ -165,7 +165,7 @@ function ReviewSection({ rows }: { rows: ProcessedRow[] }) {
       {/* KPIs Gerais */}
       <div>
         <p className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-2">KPIs Gerais</p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3">
           <StatCard icon={FileText} label="Total de Notícias" value={n} color="primary"
             tooltip="Total de matérias no período selecionado." />
           <StatCard icon={Globe} label="Fontes Únicas" value={uniqSrc}
@@ -183,7 +183,7 @@ function ReviewSection({ rows }: { rows: ProcessedRow[] }) {
       {/* KPIs Tier 1 */}
       <div>
         <p className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-2">KPIs Tier 1</p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3">
           <StatCard icon={Zap} label="AVE Tier 1" color="accent"
             value={aveTier1Fmt.display}
             valueTitle={aveTier1Fmt.short ? aveTier1Fmt.full : undefined}
@@ -201,7 +201,7 @@ function ReviewSection({ rows }: { rows: ProcessedRow[] }) {
       {/* KPIs Sentimento & Impacto */}
       <div>
         <p className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-2">Sentimento & Impacto</p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3">
           <StatCard icon={FileText} label="Matérias Positivas" value={positive} color="accent"
             tooltip="Total de matérias com sentimento Positivo." />
           <StatCard icon={FileText} label="Matérias Neutras" value={neutral} color="muted"
@@ -243,7 +243,7 @@ function ReviewSection({ rows }: { rows: ProcessedRow[] }) {
   );
 }
 
-// ─── Tier Config Modal ────────────────────────────────
+// ─── Tier Config Modal ─────────────────────────────────────────
 function TierConfigModal({ tierEntries, setTierEntries, onClose }: {
   tierEntries: TierEntry[];
   setTierEntries: React.Dispatch<React.SetStateAction<TierEntry[]>>;
@@ -444,14 +444,14 @@ function TierConfigModal({ tierEntries, setTierEntries, onClose }: {
   );
 }
 
-// ─── Button styles ────────────────────────────────────
+// ─── Button styles ────────────────────────────────────────────
 const btnPrimary   = "flex items-center gap-2 px-5 py-2 rounded-xl font-semibold text-sm text-white transition-all hover:opacity-90";
 const btnSecondary = "flex items-center gap-2 px-3 py-2 rounded-xl border border-border text-text-muted hover:text-text-base hover:border-primary/50 text-sm transition-all bg-card";
 
-// ─── Dashboard ────────────────────────────────────────
+// ─── Dashboard ────────────────────────────────────────────
 export default function Dashboard() {
   const router = useRouter();
-  const [mode, setMode] = useState<"" | "clipping">("");
+  const [mode, setMode] = useState<"" | "clipping">("" );
   const [step, setStep] = useState<WizardStep>(1);
   const [fileName, setFileName] = useState("");
   const [fileSize, setFileSize] = useState(0);
@@ -595,17 +595,19 @@ export default function Dashboard() {
   // ══════════════════════════════════════════════════════
   return (
     <div className="min-h-screen bg-bg">
-      <Navbar />
+      <Navbar onTierClick={mode === "clipping" ? () => setShowTierModal(true) : undefined} />
       <main className="pt-[52px]">
 
         {/* Sub-header */}
         <div className="border-b border-border bg-card shadow-sm">
-          <div className="w-full px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-lg font-bold text-text-base">Automação de RP</h1>
-              <p className="text-text-muted text-sm mt-0.5">
-                Importe, processe e exporte seus relatórios de clipping
-              </p>
+          <div className="w-full px-4 py-3 flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-base sm:text-lg font-bold text-text-base">Automação de RP</h1>
+                <p className="text-text-muted text-xs sm:text-sm mt-0.5 hidden sm:block">
+                  Importe, processe e exporte seus relatórios de clipping
+                </p>
+              </div>
             </div>
             {mode === "clipping" && (
               <StepIndicator currentStep={step} onStepClick={(s) => s < step && setStep(s)} />
@@ -615,7 +617,7 @@ export default function Dashboard() {
 
         <div className="w-full px-4 py-6">
 
-          {/* ══ MODE SELECTION ═════════════════════════ */}
+          {/* ══ MODE SELECTION ═════════════════════════════════════ */}
           {mode === "" && (
             <div className="max-w-2xl mx-auto">
               <div className="text-center mb-8">
@@ -672,7 +674,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* ══ STEP 1 — UPLOAD ═══════════════════════ */}
+          {/* ══ STEP 1 — UPLOAD ═══════════════════════════════════════════ */}
           {mode === "clipping" && step === 1 && (
             <div className="max-w-xl mx-auto">
               <div className="text-center mb-6">
@@ -752,20 +754,20 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* ══ STEP 2 — PREVIEW ══════════════════════ */}
+          {/* ══ STEP 2 — PREVIEW ════════════════════════════════════════════ */}
           {mode === "clipping" && step === 2 && (
             <div>
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                 <div>
                   <h2 className="text-lg font-bold text-text-base flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-primary" /> Pré-visualização — Dados Limpos
                   </h2>
                   <p className="text-text-muted text-sm mt-0.5">
-                    <span className="font-medium text-primary">{fileName}</span> •{" "}
+                    <span className="font-medium text-primary">{fileName}</span> {•}{”}
                     {rows.length} registros • {(fileSize / 1024).toFixed(1)} KB
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <button onClick={resetWizard} className={btnSecondary}>
                     <RefreshCw className="w-3.5 h-3.5" /> Novo arquivo
                   </button>
@@ -794,17 +796,17 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* ══ STEP 3 — PROCESSING ═══════════════════ */}
+          {/* ══ STEP 3 — PROCESSING ═══════════════════════════════════════════ */}
           {mode === "clipping" && step === 3 && (
             <div>
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                 <div>
                   <h2 className="text-lg font-bold text-text-base">Processamento Inteligente</h2>
                   <p className="text-text-muted text-sm mt-0.5">
                     Tier auto-preenchido por URL • Impacto verificado via leitura da notícia • Proativo/Espontâneo manual
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <button onClick={() => setShowTierModal(true)} className={btnSecondary}>
                     <FileSpreadsheet className="w-3.5 h-3.5" /> Configurar Tiers
                   </button>
@@ -846,10 +848,10 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* ══ STEP 4 — REVIEW ═══════════════════════ */}
+          {/* ══ STEP 4 — REVIEW ═══════════════════════════════════════════════ */}
           {mode === "clipping" && step === 4 && (
             <div>
-              <div className="flex items-center justify-between mb-5">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
                 <div>
                   <h2 className="text-lg font-bold text-text-base flex items-center gap-2">
                     <BarChart3 className="w-4 h-4 text-primary" /> Review — Resumo & Gráficos
@@ -858,7 +860,7 @@ export default function Dashboard() {
                     Visão consolidada dos dados processados. Filtre por país usando as abas.
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <button onClick={() => setStep(3)} className={btnSecondary}>
                     <RefreshCw className="w-3.5 h-3.5" /> Voltar
                   </button>
@@ -873,7 +875,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* ══ STEP 5 — EXPORT ═══════════════════════ */}
+          {/* ══ STEP 5 — EXPORT ═══════════════════════════════════════════════ */}
           {mode === "clipping" && step === 5 && (
             <div className="flex items-center justify-center" style={{ minHeight: "60vh" }}>
               <div className="text-center max-w-sm w-full">
