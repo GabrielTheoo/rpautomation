@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import {
   Search, FileSpreadsheet, Upload, Loader2, AlertTriangle,
-  RefreshCw, ArrowLeft, CheckCircle2, XCircle,
+  RefreshCw, ArrowLeft, CheckCircle2, XCircle, Download,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import type { ProcessedRow } from "@/lib/types";
@@ -142,6 +142,26 @@ export default function Pesquisa() {
     setHasSearched(false); setProgress(0); setUploadError("");
   };
 
+  const handleExport = async () => {
+    const exportRows = results.map(({ _checked, _found, _count, _source, ...r }) => ({
+      ...r,
+      Menções: _count,
+    }));
+    const res = await fetch("/api/export", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rows: exportRows }),
+    });
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Pesquisa_${searchTerm.replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.xlsx`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   // ── Derived ───────────────────────────────────────────
   const pct = rows.length > 0 ? Math.round((progress / rows.length) * 100) : 0;
   const results = rows.filter((r) => r._found);
@@ -154,28 +174,41 @@ export default function Pesquisa() {
 
         {/* Sub-header */}
         <div className="border-b border-border bg-card shadow-sm">
-          <div className="w-full px-4 py-4 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
+          <div className="w-full px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <a href="/dashboard"
-                className="flex items-center gap-1.5 text-text-muted hover:text-primary transition-colors text-xs">
-                <ArrowLeft className="w-3.5 h-3.5" /> Dashboard
+                className="flex items-center gap-1 text-text-muted hover:text-primary transition-colors text-xs flex-shrink-0">
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Dashboard</span>
               </a>
-              <span className="text-border">|</span>
-              <div>
-                <h1 className="text-base font-bold text-text-base flex items-center gap-2">
-                  <Search className="w-4 h-4 text-primary" /> Pesquisa de Termos
+              <span className="text-border hidden sm:inline">|</span>
+              <div className="min-w-0">
+                <h1 className="text-sm sm:text-base font-bold text-text-base flex items-center gap-2">
+                  <Search className="w-4 h-4 text-primary flex-shrink-0" /> Pesquisa de Termos
                 </h1>
-                <p className="text-text-muted text-xs mt-0.5">
+                <p className="text-text-muted text-xs mt-0.5 hidden sm:block">
                   Carregue uma planilha e pesquise um termo em todas as matérias
                 </p>
               </div>
             </div>
-            {rows.length > 0 && (
-              <button onClick={reset}
-                className="flex items-center gap-1.5 text-xs text-text-muted hover:text-primary border border-border rounded-lg px-3 py-1.5 bg-card transition-all hover:border-primary/50">
-                <RefreshCw className="w-3 h-3" /> Nova pesquisa
-              </button>
-            )}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {hasSearched && results.length > 0 && (
+                <button onClick={handleExport}
+                  className="flex items-center gap-1.5 text-xs text-white px-3 py-1.5 rounded-lg transition-all hover:opacity-90 font-semibold"
+                  style={{ background: "#4A7B1E" }}>
+                  <Download className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Exportar</span>
+                  <span className="sm:hidden">XLSX</span>
+                </button>
+              )}
+              {rows.length > 0 && (
+                <button onClick={reset}
+                  className="flex items-center gap-1.5 text-xs text-text-muted hover:text-primary border border-border rounded-lg px-3 py-1.5 bg-card transition-all hover:border-primary/50">
+                  <RefreshCw className="w-3 h-3" />
+                  <span className="hidden sm:inline">Nova pesquisa</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -256,14 +289,14 @@ export default function Pesquisa() {
               </div>
 
               <div className="flex gap-2">
-                <div className="relative flex-1">
+                <div className="relative flex-1 min-w-0">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
                   <input
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && !isSearching && runSearch()}
-                    placeholder="Digite o termo para pesquisar nas matérias…"
+                    placeholder="Digite o termo para pesquisar…"
                     disabled={isSearching}
                     className="w-full pl-9 pr-4 py-2.5 bg-bg border border-border rounded-xl text-text-base text-sm focus:outline-none focus:border-primary transition-colors placeholder-text-muted/50"
                   />
@@ -271,13 +304,13 @@ export default function Pesquisa() {
                 <button
                   onClick={runSearch}
                   disabled={isSearching || !searchTerm.trim()}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm text-white transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-sm text-white transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                   style={{ background: "#4A7B1E" }}
                 >
                   {isSearching ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" /> Pesquisando…</>
+                    <><Loader2 className="w-4 h-4 animate-spin" /><span className="hidden sm:inline"> Pesquisando…</span></>
                   ) : (
-                    <><Search className="w-4 h-4" /> Pesquisar</>
+                    <><Search className="w-4 h-4" /><span className="hidden sm:inline"> Pesquisar</span></>
                   )}
                 </button>
               </div>
@@ -329,7 +362,7 @@ export default function Pesquisa() {
 
               {results.length > 0 && (
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                  <div className="overflow-y-auto" style={{ maxHeight: "65vh" }}>
+                  <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: "65vh" }}>
                     <table className="data-table">
                       <colgroup>
                         <col style={{ width: "32px" }} />
