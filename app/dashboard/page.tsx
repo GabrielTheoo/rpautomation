@@ -777,8 +777,7 @@ export default function Dashboard() {
                     <CheckCircle2 className="w-4 h-4 text-primary" /> Pré-visualização — Dados Limpos
                   </h2>
                   <p className="text-text-muted text-sm mt-0.5">
-                    <span className="font-medium text-primary">{fileName}</span> {•}{”}
-                    {rows.length} registros • {(fileSize / 1024).toFixed(1)} KB
+                    <span className="font-medium text-primary">{fileName}</span> — {rows.length} registros — {(fileSize / 1024).toFixed(1)} KB
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
