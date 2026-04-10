@@ -149,11 +149,11 @@ function CountryTabs({ countries, active, onSelect, rows }: {
         </button>
       )}
       {countries.map(c => {
-        const count = rows.filter(r => String(r.Country || "") === c).length;
+        const count = rows.filter(r => String(r.Country || "").trim().toLowerCase() === c.trim().toLowerCase()).length;
         return (
           <button key={c} onClick={() => onSelect(c)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              active === c
+              active.trim().toLowerCase() === c.trim().toLowerCase()
                 ? "bg-primary text-white shadow-sm"
                 : isBrazilStr(c)
                   ? "bg-card border-2 border-primary/40 text-primary hover:border-primary"
@@ -331,7 +331,7 @@ export default function AcuraciaPage() {
   const countries = useMemo(() => {
     const seen = new Set<string>(); const list: string[] = [];
     for (const row of rows) {
-      const c = String(row.Country || "");
+      const c = String(row.Country || "").trim();
       if (!seen.has(c)) { seen.add(c); list.push(c); }
     }
     return list.sort((a, b) => {
@@ -344,7 +344,7 @@ export default function AcuraciaPage() {
   const displayRows = useMemo(() => rows.filter(row => {
     if (activeCountry === "all") return true;
     if (activeCountry === "internacional") return !isBrazilStr(row.Country);
-    return String(row.Country || "") === activeCountry;
+    return String(row.Country || "").trim().toLowerCase() === activeCountry.trim().toLowerCase();
   }), [rows, activeCountry]);
 
   // Computed summary stats

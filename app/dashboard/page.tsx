@@ -7,7 +7,7 @@ import {
   Upload, FileSpreadsheet, CheckCircle2, Loader2,
   Download, AlertTriangle, RefreshCw, Zap, TrendingUp,
   Globe, FileText, Search, BarChart3,
-  Plus, Trash2, X, Info,
+  Plus, Trash2, X, Info, ClipboardCheck, History,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import StepIndicator from "@/components/StepIndicator";
@@ -633,14 +633,14 @@ export default function Dashboard() {
 
           {/* ══ MODE SELECTION ═════════════════════════════════════ */}
           {mode === "" && (
-            <div className="max-w-2xl mx-auto">
+            <div className="max-w-4xl mx-auto">
               <div className="text-center mb-8">
                 <h2 className="text-xl font-bold text-text-base">O que você deseja fazer?</h2>
                 <p className="text-text-muted text-sm mt-1">
                   Escolha uma das opções abaixo para começar
                 </p>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 {/* Clipping */}
                 <button
                   onClick={() => setMode("clipping")}
@@ -682,6 +682,50 @@ export default function Dashboard() {
                   </div>
                   <span className="text-xs text-accent font-semibold mt-auto">
                     Iniciar →
+                  </span>
+                </button>
+
+                {/* Acurácia */}
+                <button
+                  onClick={() => router.push("/acuracia")}
+                  className="group relative flex flex-col items-start gap-4 p-6 bg-card border-2 border-border rounded-2xl text-left hover:border-accent/60 hover:shadow-md transition-all"
+                >
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center"
+                    style={{ background: "rgba(94,168,24,0.1)", border: "1px solid rgba(94,168,24,0.25)" }}>
+                    <ClipboardCheck className="w-6 h-6" style={{ color: "#5EA818" }} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-text-base group-hover:text-accent transition-colors">
+                      Acurácia
+                    </h3>
+                    <p className="text-text-muted text-sm mt-1 leading-relaxed">
+                      Analise planilhas multi-país com métricas de impacto, sentimento, tier e proatividade por região.
+                    </p>
+                  </div>
+                  <span className="text-xs text-accent font-semibold mt-auto">
+                    Iniciar →
+                  </span>
+                </button>
+
+                {/* Histórico */}
+                <button
+                  onClick={() => router.push("/historico")}
+                  className="group relative flex flex-col items-start gap-4 p-6 bg-card border-2 border-border rounded-2xl text-left hover:border-border hover:shadow-md transition-all"
+                >
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center"
+                    style={{ background: "rgba(143,168,112,0.1)", border: "1px solid rgba(143,168,112,0.25)" }}>
+                    <History className="w-6 h-6" style={{ color: "#8fa870" }} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-text-base group-hover:text-text-muted transition-colors">
+                      Histórico
+                    </h3>
+                    <p className="text-text-muted text-sm mt-1 leading-relaxed">
+                      Acesse relatórios salvos anteriormente e revise análises de clipping e acurácia.
+                    </p>
+                  </div>
+                  <span className="text-xs text-text-muted font-semibold mt-auto">
+                    Acessar →
                   </span>
                 </button>
               </div>

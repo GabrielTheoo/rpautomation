@@ -25,6 +25,7 @@ export default withAuth(
 export const config = {
   matcher: [
     "/dashboard/:path*",
+    "/acuracia/:path*",
     "/historico/:path*",
     "/pesquisa/:path*",
     "/tier-config/:path*",
