@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { BarChart3, Settings, Zap, ClipboardCheck, History, User, LogOut, ChevronDown } from "lucide-react";
+import { BarChart3, Settings, Zap, ClipboardCheck, History, User, LogOut, ChevronDown, ShieldCheck } from "lucide-react";
 
 interface NavbarProps {
   onTierClick?: () => void;
@@ -149,6 +149,17 @@ export default function Navbar({ onTierClick }: NavbarProps) {
                   <User className="w-4 h-4 flex-shrink-0" />
                   Perfil
                 </Link>
+                {session?.user?.role === "admin" && (
+                  <Link
+                    href="/admin"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm w-full transition-colors hover:bg-white/10"
+                    style={{ color: "#BBF261" }}
+                  >
+                    <ShieldCheck className="w-4 h-4 flex-shrink-0" />
+                    Painel Admin
+                  </Link>
+                )}
                 <button
                   onClick={() => signOut({ callbackUrl: "/login" })}
                   className="flex items-center gap-2.5 px-4 py-2.5 text-sm w-full transition-colors hover:bg-white/10 text-left"
