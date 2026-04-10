@@ -104,6 +104,84 @@ export function exportToXLSXMultiSheet(
   return XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
 }
 
+// Parse a multi-sheet spreadsheet for Acurácia: each sheet = one country
+export function parseMultiSheetSpreadsheet(buffer: ArrayBuffer): import("./types").ProcessedRow[] {
+  const bytes = new Uint8Array(buffer);
+  const isUtf16LE = bytes[0] === 0xff && bytes[1] === 0xfe;
+  const isUtf16BE = bytes[0] === 0xfe && bytes[1] === 0xff;
+
+  let workbook: XLSX.WorkBook;
+  if (isUtf16LE || isUtf16BE) {
+    const text = new TextDecoder(isUtf16BE ? "utf-16be" : "utf-16le").decode(buffer);
+    workbook = XLSX.read(text, { type: "string", raw: false });
+  } else {
+    workbook = XLSX.read(buffer, { type: "array" });
+  }
+
+  // ── Value normalizers ──────────────────────────────────
+  function normalizeProactive(val: string): "Proactive" | "Spontaneous" | "" {
+    const v = val.trim().toLowerCase();
+    if (["proativo", "pro active", "proactive", "pro-active"].includes(v)) return "Proactive";
+    if (["espontâneo", "espontaneo", "espontâneos", "espontaneos", "spontaneous"].includes(v)) return "Spontaneous";
+    return val as "" | "Proactive" | "Spontaneous";
+  }
+
+  function normalizeImpact(val: string): "With Impact" | "Without Impact" | "Checking..." | "Error" | "" {
+    const v = val.trim().toLowerCase();
+    if (["com impacto", "with impact", "comimpacto"].includes(v)) return "With Impact";
+    if (["sem impacto", "without impact", "semimpacto"].includes(v)) return "Without Impact";
+    return val as "" | "With Impact" | "Without Impact" | "Checking..." | "Error";
+  }
+
+  const allRows: import("./types").ProcessedRow[] = [];
+
+  for (const sheetName of workbook.SheetNames) {
+    const sheet = workbook.Sheets[sheetName];
+    const rawRows: Record<string, unknown>[] = XLSX.utils.sheet_to_json(sheet, {
+      defval: "",
+      raw: false,
+    });
+
+    for (const row of rawRows) {
+      const get = (keys: string[]): string => {
+        for (const k of keys) {
+          const match = Object.keys(row).find(
+            (rk) => rk.trim().toLowerCase() === k.toLowerCase()
+          );
+          if (match) return String(row[match] ?? "").trim();
+        }
+        return "";
+      };
+
+      const tier = get(["tier"]) as "1" | "2" | "3" | "N/A" | "";
+      const proactive = normalizeProactive(
+        get(["proactive or spontaneous", "proactive_or_spontaneous", "proativo ou espontâneo", "proativo"])
+      );
+      const impact = normalizeImpact(
+        get(["with impact or without impact", "with_impact_or_without_impact", "com impacto ou sem impacto", "impacto"])
+      );
+
+      const countryValue = get(["country", "país", "pais"]) || sheetName.trim();
+
+      allRows.push({
+        Date:      get(["date"]),
+        Headline:  get(["headline"]),
+        URL:       get(["url"]),
+        Source:    get(["source"]),
+        Country:   countryValue,
+        Reach:     get(["reach"]),
+        AVE:       get(["ave"]),
+        Sentiment: get(["sentiment"]),
+        "Proactive or Spontaneous": proactive,
+        "With Impact or Without Impact": impact,
+        Tier: tier,
+      });
+    }
+  }
+
+  return allRows;
+}
+
 export function parseTierSpreadsheet(
   buffer: ArrayBuffer
 ): Array<{ name: string; keyword: string; tier: 1 | 2 | 3 }> {

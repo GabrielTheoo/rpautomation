@@ -153,9 +153,14 @@ function ReviewSection({ rows }: { rows: ProcessedRow[] }) {
   const neutral   = rows.filter(r => String(r.Sentiment || "").toLowerCase() === "neutral").length;
   const negative  = rows.filter(r => String(r.Sentiment || "").toLowerCase() === "negative").length;
 
-  const withImpact    = rows.filter(r => r["With Impact or Without Impact"] === "With Impact").length;
+  const withImpactRows = rows.filter(r => r["With Impact or Without Impact"] === "With Impact");
+  const withImpact    = withImpactRows.length;
   const withoutImpact = rows.filter(r => r["With Impact or Without Impact"] === "Without Impact").length;
   const impactTier1   = tier1.filter(r => r["With Impact or Without Impact"] === "With Impact").length;
+
+  const impactPositive = withImpactRows.filter(r => String(r.Sentiment || "").toLowerCase() === "positive").length;
+  const impactNeutral  = withImpactRows.filter(r => String(r.Sentiment || "").toLowerCase() === "neutral").length;
+  const impactNegative = withImpactRows.filter(r => String(r.Sentiment || "").toLowerCase() === "negative").length;
 
   const aveFmt     = fmtAVE(totalAVE);
   const aveTier1Fmt = fmtAVE(aveTier1);
@@ -214,7 +219,7 @@ function ReviewSection({ rows }: { rows: ProcessedRow[] }) {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         <ChartCard title="Distribuição de Sentimento">
           <HBar label="Positivo"  value={positive}  max={n} color="#4A7B1E" />
           <HBar label="Neutro"    value={neutral}   max={n} color="#9CA3AF" />
@@ -237,6 +242,15 @@ function ReviewSection({ rows }: { rows: ProcessedRow[] }) {
           <HBar label="Tier 2"    value={tier2.length}    max={n} color="#5EA818" />
           <HBar label="Tier 3"    value={tier3.length}    max={n} color="#A8D880" />
           <HBar label="Sem Tier"  value={tierNone.length} max={n} color="#E5E7EB" />
+        </ChartCard>
+
+        <ChartCard title="Sentimento c/ Impacto">
+          <HBar label="Positivo" value={impactPositive} max={withImpact} color="#4A7B1E" />
+          <HBar label="Neutro"   value={impactNeutral}  max={withImpact} color="#9CA3AF" />
+          <HBar label="Negativo" value={impactNegative} max={withImpact} color="#EF4444" />
+          {withImpact - impactPositive - impactNeutral - impactNegative > 0 && (
+            <HBar label="Não definido" value={withImpact - impactPositive - impactNeutral - impactNegative} max={withImpact} color="#E5E7EB" />
+          )}
         </ChartCard>
       </div>
     </div>
