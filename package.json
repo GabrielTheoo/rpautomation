@@ -18,7 +18,10 @@
     "react-dropzone": "^14.2.3",
     "clsx": "^2.1.1",
     "tailwind-merge": "^2.4.0",
-    "lucide-react": "^0.411.0"
+    "lucide-react": "^0.411.0",
+    "next-auth": "^4.24.7",
+    "bcryptjs": "^2.4.3",
+    "@neondatabase/serverless": "^0.9.4"
   },
   "devDependencies": {
     "typescript": "^5",
@@ -29,6 +32,7 @@
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.40",
     "eslint": "^8",
-    "eslint-config-next": "14.2.5"
+    "eslint-config-next": "14.2.5",
+    "@types/bcryptjs": "^2.4.6"
   }
 }
