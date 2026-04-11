@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import PageEditor from "@/components/PageEditor";
 import {
   Users, Building2, Plus, Loader2, X, Eye, EyeOff,
   ChevronDown, ChevronRight, UserPlus, Trash2, ShieldCheck,
@@ -312,9 +313,9 @@ export default function AdminPage() {
           <div className="w-full px-4 py-4">
             <div className="flex items-center gap-2 mb-1">
               <ShieldCheck className="w-5 h-5 text-primary" />
-              <h1 className="text-lg font-bold text-text-base">Painel Administrativo</h1>
+              <h1 className="text-lg font-bold text-text-base" data-ek="admin-title" data-ek-label="Título da Página">Painel Administrativo</h1>
             </div>
-            <p className="text-text-muted text-sm">Gerencie usuários e empresas do sistema</p>
+            <p className="text-text-muted text-sm" data-ek="admin-subtitle" data-ek-label="Subtítulo da Página">Gerencie usuários e empresas do sistema</p>
           </div>
         </div>
 
@@ -340,7 +341,7 @@ export default function AdminPage() {
           {tab === "users" && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-text-muted uppercase tracking-wider">Todos os usuários</p>
+                <p className="text-sm font-semibold text-text-muted uppercase tracking-wider" data-ek="users-section-label" data-ek-label="Rótulo Seção Usuários">Todos os usuários</p>
                 <button onClick={() => setShowNewUser(v => !v)}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-primary text-white hover:opacity-90 transition-all">
                   <Plus className="w-4 h-4" /> Novo usuário
@@ -454,7 +455,7 @@ export default function AdminPage() {
           {tab === "companies" && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-text-muted uppercase tracking-wider">Empresas cadastradas</p>
+                <p className="text-sm font-semibold text-text-muted uppercase tracking-wider" data-ek="companies-section-label" data-ek-label="Rótulo Seção Empresas">Empresas cadastradas</p>
                 <button onClick={() => setShowNewCompany(v => !v)}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-primary text-white hover:opacity-90 transition-all">
                   <Plus className="w-4 h-4" /> Nova empresa
@@ -570,6 +571,8 @@ export default function AdminPage() {
       {historyUser && (
         <UserHistoryDrawer user={historyUser} onClose={() => setHistoryUser(null)} />
       )}
+
+      <PageEditor pageKey="admin" />
     </div>
   );
 }
