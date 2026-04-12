@@ -404,7 +404,7 @@ export default function Pesquisa() {
                               <td>
                                 {row.URL ? (
                                   <a
-                                    href={`${row.URL}#:~:text=${encodeURIComponent(searchTerm)}`}
+                                    href={`/pesquisa/reader?url=${encodeURIComponent(row.URL)}&term=${encodeURIComponent(searchTerm)}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     title={`Abrir e rolar até "${searchTerm}"`}
