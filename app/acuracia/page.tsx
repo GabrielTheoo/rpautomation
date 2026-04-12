@@ -4,7 +4,7 @@ import { useState, useCallback, useMemo } from "react";
 import { useDropzone } from "react-dropzone";
 import {
   Upload, FileSpreadsheet, Loader2, AlertTriangle,
-  CheckCircle2, ArrowLeft, Download, Save, BarChart3,
+  CheckCircle2, ArrowLeft, Download, Save, BarChart3, Copy,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useRouter } from "next/navigation";
@@ -18,25 +18,53 @@ function isBrazilStr(country: string | number | undefined): boolean {
 
 function fmtAVE(val: string | number | undefined | null) {
   const n = parseFloat(String(val ?? "").replace(/[$,\s]/g, "")) || 0;
-  if (!val || n === 0) return { display: "—", full: "—", short: false };
-  const full = `$ ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  if (n >= 1_000_000_000) return { display: `$ ${(n / 1_000_000_000).toFixed(2)}B`, full, short: true };
-  if (n >= 1_000_000)     return { display: `$ ${(n / 1_000_000).toFixed(2)}M`, full, short: true };
-  return { display: full, full, short: false };
+  if (!val || n === 0) return { display: "—", full: "—", exact: "—", short: false };
+  const full  = `$ ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const exact = `$ ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (n >= 1_000_000_000) return { display: `$ ${Math.round(n / 1_000_000_000)}B`, full, exact, short: true };
+  if (n >= 1_000_000)     return { display: `$ ${Math.round(n / 1_000_000)}M`, full, exact, short: true };
+  return { display: `$ ${Math.round(n).toLocaleString("en-US")}`, full, exact, short: false };
 }
 
 // ─── Sub-components ───────────────────────────────────
 
-function KpiCard({ label, value, sub, footer, color = "primary", bar }: {
+function CopyButton({ value, title }: { value: string; title?: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  return (
+    <button
+      onClick={handleCopy}
+      title={title ?? `Copiar: ${value}`}
+      className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium transition-all"
+      style={copied
+        ? { background: "rgba(94,168,24,0.2)", color: "#5EA818" }
+        : { background: "rgba(167,200,113,0.08)", border: "1px solid rgba(167,200,113,0.2)", color: "#8fa870" }}
+    >
+      <Copy className="w-3 h-3" />
+      {copied ? "Copiado!" : "Copiar"}
+    </button>
+  );
+}
+
+function KpiCard({ label, value, sub, footer, color = "primary", bar, copyValue, copyTitle }: {
   label: string; value: string | number; sub?: string;
   footer?: string; color?: "primary" | "accent" | "muted"; bar?: number;
+  copyValue?: string; copyTitle?: string;
 }) {
   const valueCls = color === "accent" ? "text-accent" : color === "muted" ? "text-text-muted" : "text-primary";
   return (
     <div className="flex-1 bg-card border border-border rounded-xl p-4 flex flex-col gap-3 min-w-0">
-      <span className="text-xs font-semibold text-text-muted uppercase tracking-wider leading-tight">{label}</span>
+      <div className="flex items-start justify-between gap-2">
+        <span className="text-xs font-semibold text-text-muted uppercase tracking-wider leading-tight">{label}</span>
+        {copyValue && copyValue !== "—" && <CopyButton value={copyValue} title={copyTitle} />}
+      </div>
       <div className="flex flex-col gap-0.5">
-        <span className={`text-2xl sm:text-3xl font-bold ${valueCls} truncate`}>{value}</span>
+        <span className={`text-2xl sm:text-3xl font-bold ${valueCls} truncate`} title={copyValue}>{value}</span>
         {sub && <span className="text-xs text-text-muted">{sub}</span>}
       </div>
       {bar !== undefined && (
@@ -55,16 +83,20 @@ function KpiCard({ label, value, sub, footer, color = "primary", bar }: {
   );
 }
 
-function MetricCard({ label, value, sub, barPct, color = "primary", badge }: {
+function MetricCard({ label, value, sub, barPct, color = "primary", badge, copyValue, copyTitle }: {
   label: string; value: string | number; sub?: string;
   barPct?: number; color?: "primary" | "accent"; badge?: string;
+  copyValue?: string; copyTitle?: string;
 }) {
   const valueCls = color === "accent" ? "text-accent" : "text-primary";
   return (
     <div className="flex-1 bg-card border border-border rounded-xl p-4 flex flex-col gap-2 min-w-0">
-      <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+      <div className="flex items-start justify-between gap-2">
         <span className="text-xs text-text-muted leading-tight">{label}</span>
-        <span className={`text-xl font-bold ${valueCls} truncate`}>{value}</span>
+        {copyValue && copyValue !== "—" && <CopyButton value={copyValue} title={copyTitle} />}
+      </div>
+      <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+        <span className={`text-xl font-bold ${valueCls} truncate`} title={copyValue}>{value}</span>
         {sub && <span className="text-[11px] text-text-muted">{sub}</span>}
       </div>
       {badge && (
@@ -227,9 +259,11 @@ function ReviewDashboard({ rows, allRows }: { rows: ProcessedRow[]; allRows: Pro
         <KpiCard label="Total de Notícias" value={n} sub="matérias no período"
           footer={`${uniqSrc} veículos únicos`} color="primary" />
         <KpiCard label="AVE Total" value={aveFmt.display} sub="valor equivalente em mídia"
-          footer={`Tier 1: ${aveTier1Fmt.display}`} color="accent" />
+          footer={`Tier 1: ${aveTier1Fmt.display}`} color="accent"
+          copyValue={aveFmt.exact} copyTitle={`Copiar valor exato: ${aveFmt.exact}`} />
         <KpiCard label="Alcance Total" value={reachDisplay} sub="leitores potenciais"
-          footer={`Tier 1: ${reachT1Display}`} color="accent" />
+          footer={`Tier 1: ${reachT1Display}`} color="accent"
+          copyValue={String(totalReach)} copyTitle={`Copiar alcance exato: ${totalReach.toLocaleString("pt-BR")}`} />
         <KpiCard label="% Positividade" value={`${positividade}%`} sub="saldo positivo geral"
           bar={Math.max(0, Math.min(100, positividade))} color="primary" />
       </div>
@@ -294,20 +328,23 @@ function ReviewDashboard({ rows, allRows }: { rows: ProcessedRow[]; allRows: Pro
 
       <div className="flex gap-4 flex-wrap sm:flex-nowrap">
         <MetricCard label="AVE Tier 1" value={aveTier1Fmt.display}
-          sub={`Reach T1: ${reachT1Display}`} badge={`${tier1Pos} T1 positivas`} color="accent" />
+          sub={`Reach T1: ${reachT1Display}`} badge={`${tier1Pos} T1 positivas`} color="accent"
+          copyValue={aveTier1Fmt.exact} copyTitle={`Copiar AVE Tier 1 exato: ${aveTier1Fmt.exact}`} />
         <MetricCard label="Com Impacto (T1)" value={impactTier1}
           sub={`de ${tier1.length} matérias Tier 1`}
           barPct={tier1.length > 0 ? Math.round((impactTier1 / tier1.length) * 100) : 0} color="primary" />
         <MetricCard label="Proativas c/ Impacto" value={proativeWithImpact}
           sub={`AVE: ${aveProativeFmt.display}`}
-          barPct={n > 0 ? Math.round((proativeWithImpact / n) * 100) : 0} color="accent" />
+          barPct={n > 0 ? Math.round((proativeWithImpact / n) * 100) : 0} color="accent"
+          copyValue={aveProativeFmt.exact} copyTitle={`Copiar AVE Proativas exato: ${aveProativeFmt.exact}`} />
         <MetricCard label="Tier 1 (todos países)" value={tier1AllCountries}
           sub="inclui internacionais"
           badge={tier1AllCountries > tier1.length ? `+${tier1AllCountries - tier1.length} internacionais` : undefined}
           color="primary" />
         <MetricCard label="AVE c/ Impacto (geral)" value={aveWithImpactFmt.display}
           sub="todos os tiers"
-          barPct={n > 0 ? Math.round((withImpact / n) * 100) : 0} color="accent" />
+          barPct={n > 0 ? Math.round((withImpact / n) * 100) : 0} color="accent"
+          copyValue={aveWithImpactFmt.exact} copyTitle={`Copiar AVE c/ Impacto exato: ${aveWithImpactFmt.exact}`} />
       </div>
     </div>
   );
