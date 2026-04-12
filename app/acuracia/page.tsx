@@ -21,9 +21,9 @@ function fmtAVE(val: string | number | undefined | null) {
   if (!val || n === 0) return { display: "—", full: "—", exact: "—", short: false };
   const full  = `$ ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const exact = `$ ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  if (n >= 1_000_000_000) return { display: `$ ${Math.round(n / 1_000_000_000)}B`, full, exact, short: true };
-  if (n >= 1_000_000)     return { display: `$ ${Math.round(n / 1_000_000)}M`, full, exact, short: true };
-  return { display: `$ ${Math.round(n).toLocaleString("en-US")}`, full, exact, short: false };
+  if (n >= 1_000_000_000) return { display: `$ ${(n / 1_000_000_000).toFixed(2)}B`, full, exact, short: true };
+  if (n >= 1_000_000)     return { display: `$ ${(n / 1_000_000).toFixed(2)}M`, full, exact, short: true };
+  return { display: full, full, exact, short: false };
 }
 
 // ─── Sub-components ───────────────────────────────────
