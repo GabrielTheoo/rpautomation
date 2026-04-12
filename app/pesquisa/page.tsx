@@ -403,8 +403,13 @@ export default function Pesquisa() {
                               </td>
                               <td>
                                 {row.URL ? (
-                                  <a href={row.URL} target="_blank" rel="noopener noreferrer" title={row.URL}
-                                    className="text-primary hover:text-accent transition-colors hover:underline text-xs">
+                                  <a
+                                    href={`${row.URL}#:~:text=${encodeURIComponent(searchTerm)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title={`Abrir e rolar até "${searchTerm}"`}
+                                    className="text-primary hover:text-accent transition-colors hover:underline text-xs"
+                                  >
                                     {row.URL.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]}
                                   </a>
                                 ) : "—"}

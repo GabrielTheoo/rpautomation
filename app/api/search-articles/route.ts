@@ -12,6 +12,58 @@ const HEADERS = {
   Pragma: "no-cache",
 };
 
+// Priority-ordered selectors for the article body
+const ARTICLE_SELECTORS = [
+  "[itemprop='articleBody']",
+  ".article-body",
+  ".article-content",
+  ".article__body",
+  ".article__content",
+  ".article__text",
+  ".post-body",
+  ".post-content",
+  ".entry-content",
+  ".story-body",
+  ".story-content",
+  ".news-body",
+  ".news-content",
+  ".content-body",
+  ".materia-conteudo",
+  ".conteudo-materia",
+  ".texto-materia",
+  "#article-body",
+  "#article-content",
+  "#post-content",
+  "article",
+  "main",
+];
+
+// Elements to strip before extracting text — removes sidebar, related news, comments, ads, etc.
+const NOISE_SELECTORS = [
+  "script",
+  "style",
+  "nav",
+  "footer",
+  "header",
+  "aside",
+  "[class*='related']",
+  "[class*='recommend']",
+  "[class*='sidebar']",
+  "[class*='comentar']",
+  "[class*='comment']",
+  "[class*='social']",
+  "[class*='share']",
+  "[class*='newsletter']",
+  "[class*='advertisement']",
+  "[class*='banner']",
+  "[class*='ads']",
+  "[id*='related']",
+  "[id*='sidebar']",
+  "[id*='comment']",
+  "[id*='ads']",
+  "[id*='newsletter']",
+].join(", ");
+
 export async function POST(request: NextRequest) {
   try {
     const { url, term } = await request.json();
@@ -32,26 +84,43 @@ export async function POST(request: NextRequest) {
       });
       html = typeof response.data === "string" ? response.data : JSON.stringify(response.data);
     } catch {
-      // Fetch failed — report error, caller will fallback to headline check
       return NextResponse.json({ url, found: false, count: 0, fetchFailed: true });
     }
 
     const $ = cheerio.load(html);
 
-    const pageTitle = $("title").text().toLowerCase();
-    const ogTitle = $('meta[property="og:title"]').attr("content")?.toLowerCase() || "";
-    const ogDesc = $('meta[property="og:description"]').attr("content")?.toLowerCase() || "";
-    const metaDesc = $('meta[name="description"]').attr("content")?.toLowerCase() || "";
+    // Strip all noise elements
+    $(NOISE_SELECTORS).remove();
 
-    $("script, style, nav, footer, header, aside").remove();
-    const bodyText = $("body").text().toLowerCase();
+    // Title: h1
+    const titleText = $("h1").first().text().trim();
 
-    const fullText = [pageTitle, ogTitle, bodyText, ogDesc, metaDesc].join(" ");
+    // Subtitle: first h2 inside the article area, or the subtitle/deck meta
+    const subtitleText =
+      $("[class*='subtitle'], [class*='subheadline'], [class*='deck'], [class*='chapeu']").first().text().trim() ||
+      $("h2").first().text().trim();
 
-    // Count occurrences (escape special regex chars)
+    // Article body: try each selector in priority order
+    let bodyText = "";
+    for (const selector of ARTICLE_SELECTORS) {
+      const el = $(selector).first();
+      if (el.length && el.text().trim().length > 100) {
+        bodyText = el.text().trim();
+        break;
+      }
+    }
+
+    // Fallback: full body text (already stripped of nav/footer/etc.)
+    if (!bodyText) {
+      bodyText = $("body").text().trim();
+    }
+
+    // Only search in: title + subtitle + body. Never in meta, sidebar, related articles.
+    const searchableText = [titleText, subtitleText, bodyText].join(" ").toLowerCase();
+
     const escaped = termLower.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const regex = new RegExp(escaped, "g");
-    const matches = fullText.match(regex);
+    const matches = searchableText.match(regex);
     const count = matches ? matches.length : 0;
 
     return NextResponse.json({ url, found: count > 0, count, fetchFailed: false });
