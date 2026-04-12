@@ -11,12 +11,15 @@ interface ArticleData {
   paragraphs: string[];
   count: number;
   sourceUrl: string;
+  foundInSpreadsheetHeadline: boolean;
+  spreadsheetHeadline: string;
 }
 
 function ReaderContent() {
   const params = useSearchParams();
-  const url  = params.get("url")  || "";
-  const term = params.get("term") || "";
+  const url      = params.get("url")      || "";
+  const term     = params.get("term")     || "";
+  const headline = params.get("headline") || "";
 
   const [article, setArticle] = useState<ArticleData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -26,7 +29,7 @@ function ReaderContent() {
   useEffect(() => {
     if (!url) { setError("URL não informada."); setLoading(false); return; }
     setLoading(true);
-    fetch(`/api/search-articles/reader?url=${encodeURIComponent(url)}&term=${encodeURIComponent(term)}`)
+    fetch(`/api/search-articles/reader?url=${encodeURIComponent(url)}&term=${encodeURIComponent(term)}&headline=${encodeURIComponent(headline)}`)
       .then((r) => r.json())
       .then((data) => {
         if (data.error) throw new Error(data.error);
@@ -114,6 +117,27 @@ function ReaderContent() {
                     className="text-xs underline mt-1 block" style={{ color: "#C0392B" }}>
                     Abrir a matéria original →
                   </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Warning: found only in spreadsheet headline, not in online article */}
+          {article && !loading && article.foundInSpreadsheetHeadline && (
+            <div className="mb-4 p-4 rounded-xl flex items-start gap-3"
+              style={{ background: "#FFF8E6", border: "1px solid #F5D87A" }}>
+              <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "#B45309" }} />
+              <div className="flex flex-col gap-1">
+                <p className="text-sm font-medium" style={{ color: "#B45309" }}>
+                  A palavra não foi encontrada no conteúdo online do artigo.
+                </p>
+                <p className="text-xs" style={{ color: "#92400E" }}>
+                  Ela aparece no <strong>título da planilha</strong>, mas o conteúdo do site pode estar diferente, restrito ou não acessível.
+                </p>
+                {article.spreadsheetHeadline && (
+                  <p className="text-xs mt-1 p-2 rounded" style={{ background: "#FEF3C7", color: "#78350F" }}>
+                    Título na planilha: <span dangerouslySetInnerHTML={{ __html: article.spreadsheetHeadline }} />
+                  </p>
                 )}
               </div>
             </div>

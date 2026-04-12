@@ -10,6 +10,7 @@ const HEADERS = {
   "Cache-Control": "no-cache",
 };
 
+// Exact same selectors as /api/search-articles/route.ts — must stay in sync
 const ARTICLE_SELECTORS = [
   "[itemprop='articleBody']",
   ".article-body",
@@ -44,16 +45,6 @@ const NOISE_SELECTORS = [
   "[id*='related']", "[id*='sidebar']", "[id*='comment']", "[id*='ads']", "[id*='newsletter']",
 ].join(", ");
 
-function highlight(text: string, term: string): string {
-  if (!term) return escapeHtml(text);
-  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const regex = new RegExp(`(${escaped})`, "gi");
-  return escapeHtml(text).replace(
-    new RegExp(escapeHtml(escaped), "gi"),
-    (m) => `<mark>${m}</mark>`
-  );
-}
-
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -66,13 +57,54 @@ function highlightRaw(text: string, term: string): string {
   if (!term || !text) return escapeHtml(text);
   const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const regex = new RegExp(`(${escaped})`, "gi");
-  return text.replace(regex, (m) => `<mark>${escapeHtml(m)}</mark>`);
+  return escapeHtml(text).replace(
+    new RegExp(`(${escapeHtml(escaped)})`, "gi"),
+    (m) => `<mark>${m}</mark>`
+  );
+}
+
+// Extract article text using IDENTICAL logic as /api/search-articles/route.ts
+// This guarantees: if search found the word, reader will find it too.
+function extractArticleText($: ReturnType<typeof cheerio.load>): {
+  title: string;
+  subtitle: string;
+  bodyText: string;
+} {
+  const title = $("h1").first().text().trim();
+
+  const subtitle =
+    $("[class*='subtitle'], [class*='subheadline'], [class*='deck'], [class*='chapeu']").first().text().trim() ||
+    $("h2").first().text().trim();
+
+  let bodyText = "";
+  for (const selector of ARTICLE_SELECTORS) {
+    const el = $(selector).first();
+    if (el.length && el.text().trim().length > 100) {
+      bodyText = el.text().trim();
+      break;
+    }
+  }
+
+  if (!bodyText) {
+    bodyText = $("body").text().trim();
+  }
+
+  return { title, subtitle, bodyText };
+}
+
+// Split full body text into display paragraphs while preserving all content
+function toParagraphs(text: string): string[] {
+  return text
+    .split(/\n+/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 5);
 }
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const url = searchParams.get("url") || "";
-  const term = searchParams.get("term") || "";
+  const url      = searchParams.get("url")      || "";
+  const term     = searchParams.get("term")     || "";
+  const headline = searchParams.get("headline") || ""; // spreadsheet headline, for fallback
 
   if (!url) {
     return NextResponse.json({ error: "Missing url" }, { status: 400 });
@@ -94,43 +126,32 @@ export async function GET(request: NextRequest) {
   const $ = cheerio.load(html);
   $(NOISE_SELECTORS).remove();
 
-  const title = $("h1").first().text().trim();
-  const subtitle =
-    $("[class*='subtitle'], [class*='subheadline'], [class*='deck'], [class*='chapeu']").first().text().trim() ||
-    $("h2").first().text().trim();
+  const { title, subtitle, bodyText } = extractArticleText($);
 
-  // Extract body paragraphs
-  let bodyParagraphs: string[] = [];
-  for (const selector of ARTICLE_SELECTORS) {
-    const el = $(selector).first();
-    if (el.length && el.text().trim().length > 100) {
-      el.find("p, h2, h3, h4, blockquote").each((_, node) => {
-        const t = $(node).text().trim();
-        if (t) bodyParagraphs.push(t);
-      });
-      // Fallback if no p/h tags found
-      if (bodyParagraphs.length === 0) {
-        bodyParagraphs = el.text().trim().split(/\n+/).filter((l) => l.trim().length > 0);
-      }
-      break;
-    }
-  }
-
-  if (bodyParagraphs.length === 0) {
-    bodyParagraphs = $("body").text().trim().split(/\n+/).filter((l) => l.trim().length > 20);
-  }
-
-  // Count total occurrences across all text
-  const fullText = [title, subtitle, ...bodyParagraphs].join(" ").toLowerCase();
-  const escaped = term.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // Count using SAME logic as search API
+  const fullText = [title, subtitle, bodyText].join(" ").toLowerCase();
+  const termLower = term.toLowerCase().trim();
+  const escaped = termLower.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const regex = new RegExp(escaped, "g");
   const count = (fullText.match(regex) || []).length;
 
+  // Check if word was found in spreadsheet headline but not in online article
+  const headlineLower = headline.toLowerCase();
+  const foundInSpreadsheetHeadline =
+    term.trim().length > 0 &&
+    headlineLower.includes(termLower) &&
+    count === 0;
+
+  // Build display paragraphs from the same bodyText (same extraction = same content)
+  const paragraphs = toParagraphs(bodyText);
+
   return NextResponse.json({
-    title:     highlightRaw(title, term),
-    subtitle:  highlightRaw(subtitle, term),
-    paragraphs: bodyParagraphs.map((p) => highlightRaw(p, term)),
+    title:      highlightRaw(title, term),
+    subtitle:   highlightRaw(subtitle, term),
+    paragraphs: paragraphs.map((p) => highlightRaw(p, term)),
     count,
     sourceUrl: url,
+    foundInSpreadsheetHeadline,
+    spreadsheetHeadline: foundInSpreadsheetHeadline ? highlightRaw(headline, term) : "",
   });
 }
