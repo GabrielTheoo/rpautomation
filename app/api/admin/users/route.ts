@@ -30,6 +30,28 @@ export async function GET() {
   }
 }
 
+// PATCH /api/admin/users — toggle role for an existing user
+export async function PATCH(req: NextRequest) {
+  const session = await requireAdmin();
+  if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  try {
+    const { id, role } = await req.json();
+    if (!id || !["admin", "user"].includes(role)) {
+      return NextResponse.json({ error: "Dados inválidos." }, { status: 400 });
+    }
+    // Prevent removing own admin role
+    if (id === session.user.id && role === "user") {
+      return NextResponse.json({ error: "Você não pode remover seu próprio acesso de admin." }, { status: 400 });
+    }
+    await sql`UPDATE users SET role = ${role} WHERE id = ${id}`;
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("[admin/users PATCH]", err);
+    return NextResponse.json({ error: "Erro ao atualizar usuário" }, { status: 500 });
+  }
+}
+
 // POST /api/admin/users — create a new user
 export async function POST(req: NextRequest) {
   const session = await requireAdmin();

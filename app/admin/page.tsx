@@ -6,11 +6,10 @@ import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import PageEditor from "@/components/PageEditor";
 import {
   Users, Building2, Plus, Loader2, X, Eye, EyeOff,
   ChevronDown, ChevronRight, UserPlus, Trash2, ShieldCheck,
-  FileSpreadsheet, Download, Calendar, ArrowLeft,
+  FileSpreadsheet, Calendar, ArrowLeft, ShieldOff,
 } from "lucide-react";
 
 // ── Types ────────────────────────────────────────────────
@@ -166,6 +165,24 @@ export default function AdminPage() {
 
   // History drawer
   const [historyUser, setHistoryUser] = useState<User | null>(null);
+
+  // Role toggle
+  const [roleLoading, setRoleLoading] = useState<string | null>(null);
+  const handleToggleRole = async (user: User) => {
+    const newRole = user.role === "admin" ? "user" : "admin";
+    setRoleLoading(user.id);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: user.id, role: newRole }),
+      });
+      const data = await res.json();
+      if (!res.ok) { alert(data.error || "Erro ao atualizar."); return; }
+      await loadUsers();
+    } catch { alert("Erro de conexão."); }
+    setRoleLoading(null);
+  };
 
   // Companies state
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -422,6 +439,7 @@ export default function AdminPage() {
                           <th className="text-left px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Empresa</th>
                           <th className="text-left px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Cargo</th>
                           <th className="text-left px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Histórico</th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Acesso</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
@@ -438,10 +456,29 @@ export default function AdminPage() {
                                 <FileSpreadsheet className="w-3.5 h-3.5" /> Ver arquivos
                               </button>
                             </td>
+                            <td className="px-4 py-3">
+                              {roleLoading === u.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin text-text-muted" />
+                              ) : u.role === "admin" ? (
+                                <button
+                                  onClick={() => handleToggleRole(u)}
+                                  title="Remover admin"
+                                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border border-red-200 text-red-500 hover:bg-red-50 transition-all">
+                                  <ShieldOff className="w-3.5 h-3.5" /> Remover admin
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleToggleRole(u)}
+                                  title="Tornar admin"
+                                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border border-primary/30 text-primary hover:bg-primary/10 transition-all">
+                                  <ShieldCheck className="w-3.5 h-3.5" /> Tornar admin
+                                </button>
+                              )}
+                            </td>
                           </tr>
                         ))}
                         {users.length === 0 && (
-                          <tr><td colSpan={6} className="px-4 py-8 text-center text-text-muted text-sm">Nenhum usuário encontrado.</td></tr>
+                          <tr><td colSpan={7} className="px-4 py-8 text-center text-text-muted text-sm">Nenhum usuário encontrado.</td></tr>
                         )}
                       </tbody>
                     </table>
@@ -571,8 +608,6 @@ export default function AdminPage() {
       {historyUser && (
         <UserHistoryDrawer user={historyUser} onClose={() => setHistoryUser(null)} />
       )}
-
-      <PageEditor pageKey="admin" />
     </div>
   );
 }
